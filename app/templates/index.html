@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}Get Recommendations - Papaya AI{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1 class="papaya-header">🌾 Smart Farming Assistant</h1>
+    <p>Get AI-powered recommendations for your crops based on weather and conditions.</p>
+</div>
+
+<article x-data="{ 
+    loading: false, 
+    result: null, 
+    error: null,
+    formData: {
+        crop_type: 'rice',
+        location_city: '',
+        location_country: 'Indonesia',
+        current_conditions: ''
+    },
+    async submit() {
+        this.loading = true;
+        this.error = null;
+        try {
+            const response = await fetch('/api/v1/recommend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.formData)
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to get recommendation');
+            }
+            
+            this.result = await response.json();
+        } catch (e) {
+            this.error = e.message;
+        } finally {
+            this.loading = false;
+        }
+    },
+    downloadPdf(id) {
+        window.open(`/api/v1/recommendations/${id}/pdf`, '_blank');
+    }
+}">
+    <h2>Enter Your Farm Details</h2>
+    
+    <form @submit.prevent="submit">
+        <div class="grid">
+            <div>
+                <label for="crop_type">Crop Type</label>
+                <select id="crop_type" x-model="formData.crop_type" required>
+                    <option value="rice">🌾 Rice (Padi)</option>
+                    <option value="corn">🌽 Corn (Jagung)</option>
+                    <option value="soybean">🫘 Soybean (Kedelai)</option>
+                    <option value="wheat">🌾 Wheat (Gandum)</option>
+                    <option value="tomato">🍅 Tomato (Tomat)</option>
+                    <option value="chili">🌶️ Chili (Cabai)</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="location_country">Country</label>
+                <input 
+                    type="text" 
+                    id="location_country" 
+                    x-model="formData.location_country" 
+                    placeholder="Indonesia"
+                    required
+                >
+            </div>
+        </div>
+        
+        <div>
+            <label for="location_city">City</label>
+            <input 
+                type="text" 
+                id="location_city" 
+                x-model="formData.location_city" 
+                placeholder="Jakarta, Bandung, Surabaya..."
+                required
+            >
+            <small>Enter the city where your farm is located</small>
+        </div>
+        
+        <div>
+            <label for="current_conditions">Current Field Conditions</label>
+            <textarea 
+                id="current_conditions" 
+                x-model="formData.current_conditions" 
+                placeholder="Describe your current field conditions: soil type, plant health, recent activities, etc.&#10;&#10;Example: Tanaman padi sudah berumur 2 bulan, daun mulai menguning, tanah masih lembab setelah hujan kemarin."
+                rows="4"
+                required
+            ></textarea>
+            <small>Be specific about soil moisture, plant health, and recent observations</small>
+        </div>
+        
+        <button type="submit" :aria-busy="loading" :disabled="loading">
+            <span x-show="!loading">🌱 Get AI Recommendations</span>
+            <span x-show="loading">Analyzing with AI...</span>
+        </button>
+    </form>
+    
+    <!-- Error Message -->
+    <div x-show="error" x-transition class="error-message">
+        <p>❌ <span x-text="error"></span></p>
+    </div>
+    
+    <!-- Results -->
+    <div x-show="result" x-transition class="results-section">
+        <hr>
+        
+        <div class="result-header">
+            <h2>🎯 AI Recommendations for <span x-text="result?.crop_type"></span></h2>
+            <p class="location">📍 <span x-text="result?.location"></span></p>
+            <p class="confidence">Confidence: <span x-text="(result?.confidence * 100).toFixed(0) + '%'"></span></p>
+        </div>
+        
+        <article class="summary-card">
+            <h3>📝 Summary</h3>
+            <p x-text="result?.summary"></p>
+        </article>
+        
+        <div class="grid">
+            <article class="recommendation-card fertilization">
+                <h3>🧪 Fertilization</h3>
+                <p><strong>Type:</strong> <span x-text="result?.fertilization?.recommended_type"></span></p>
+                <p><strong>Timing:</strong> <span x-text="result?.fertilization?.timing"></span></p>
+                <p><strong>Dosage:</strong> <span x-text="result?.fertilization?.dosage"></span></p>
+                <p><strong>Notes:</strong> <span x-text="result?.fertilization?.notes"></span></p>
+            </article>
+            
+            <article class="recommendation-card irrigation">
+                <h3>💧 Irrigation</h3>
+                <p><strong>Should Irrigate:</strong> 
+                    <span x-text="result?.irrigation?.should_irrigate ? 'Yes' : 'No'"></span>
+                </p>
+                <p><strong>Timing:</strong> <span x-text="result?.irrigation?.timing"></span></p>
+                <p><strong>Amount:</strong> <span x-text="result?.irrigation?.amount"></span></p>
+                <p><strong>Reason:</strong> <span x-text="result?.irrigation?.reason"></span></p>
+            </article>
+        </div>
+        
+        <article class="recommendation-card pest">
+            <h3>🐛 Pest & Disease Risk</h3>
+            <p><strong>Risk Level:</strong> 
+                <span class="risk-badge" 
+                      x-text="result?.pest_disease?.risk_level"
+                      :class="'risk-' + result?.pest_disease?.risk_level"></span>
+            </p>
+            <h4>Potential Issues:</h4>
+            <ul>
+                <template x-for="issue in result?.pest_disease?.potential_issues" :key="issue">
+                    <li x-text="issue"></li>
+                </template>
+            </ul>
+            <h4>Preventive Measures:</h4>
+            <ul>
+                <template x-for="measure in result?.pest_disease?.preventive_measures" :key="measure">
+                    <li x-text="measure"></li>
+                </template>
+            </ul>
+        </article>
+        
+        <article class="recommendation-card care">
+            <h3>🌱 General Care Guidelines</h3>
+            <h4>Daily Tasks:</h4>
+            <ul>
+                <template x-for="task in result?.general_care?.daily_tasks" :key="task">
+                    <li x-text="task"></li>
+                </template>
+            </ul>
+            <h4>Weekly Tasks:</h4>
+            <ul>
+                <template x-for="task in result?.general_care?.weekly_tasks" :key="task">
+                    <li x-text="task"></li>
+                </template>
+            </ul>
+            <h4>Warnings:</h4>
+            <ul class="warnings">
+                <template x-for="warning in result?.general_care?.warnings" :key="warning">
+                    <li x-text="warning"></li>
+                </template>
+            </ul>
+        </article>
+        
+        <article class="recommendation-card weather">
+            <h3>🌤️ Weather Context</h3>
+            <p x-text="result?.weather_context"></p>
+        </article>
+        
+        <!-- Actions -->
+        <div class="actions">
+            <button @click="downloadPdf(result.id)">
+                📄 Download PDF Report
+            </button>
+            <a href="/" role="button" class="secondary">
+                🔄 New Recommendation
+            </a>
+        </div>
+    </div>
+</article>
+
+<style>
+.error-message {
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    color: #c00;
+}
+
+.results-section {
+    margin-top: 2rem;
+}
+
+.result-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.result-header h2 {
+    color: var(--pico-primary);
+    margin-bottom: 0.5rem;
+}
+
+.result-header .location {
+    color: var(--pico-secondary);
+    font-size: 1.1rem;
+}
+
+.result-header .confidence {
+    color: var(--pico-contrast);
+    font-weight: bold;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #fff8f0 0%, #fff0e6 100%);
+    border: 1px solid #ff6b35;
+    border-radius: 12px;
+}
+
+.recommendation-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.recommendation-card h3 {
+    color: var(--pico-primary);
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--pico-secondary);
+    padding-bottom: 0.5rem;
+}
+
+.recommendation-card h4 {
+    color: var(--pico-secondary);
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.risk-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+}
+
+.risk-low {
+    background: #d4edda;
+    color: #155724;
+}
+
+.risk-medium {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.risk-high {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.warnings li {
+    color: #c00;
+    font-weight: 500;
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.actions button,
+.actions a {
+    min-width: 200px;
+}
+
+/* Loading animation */
+[aria-busy="true"] {
+    position: relative;
+    pointer-events: none;
+}
+
+[aria-busy="true"]::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--pico-primary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+@keyframes spin {
+    to { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .actions {
+        flex-direction: column;
+    }
+    
+    .actions button,
+    .actions a {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// Initialize Alpine.js data
+document.addEventListener('alpine:init', () => {
+    // Any global Alpine configuration
+});
+</script>
+{% endblock %}

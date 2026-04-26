@@ -11,7 +11,7 @@ Papaya AI is a high-performance, AI-driven agronomy assistant designed to bridge
 ## 🌟 Key Features
 
 - **🤖 AI-Driven Agronomy**: Real-time generation of structured farming strategies using **Gemini 3 Flash**.
-- **🌤️ Hyper-Local Weather Integration**: Consumes high-resolution forecast data from **Open-Meteo API**.
+- **🌤️ Hybrid Weather Engine**: Combines **Open-Meteo Geocoding** with **wttr.in** forecast data (free, unlimited).
 - **📄 Automated Reporting**: Instant generation of professional PDF agronomy reports for offline use.
 - **⚡ High-Performance Architecture**: Built with **FastAPI** and **Granian** for asynchronous, low-latency execution.
 - **🇮🇩 Localized Context**: Specialized prompts optimized for Indonesian farming conditions and Bahasa Indonesia output.

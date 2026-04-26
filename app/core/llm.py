@@ -14,7 +14,7 @@ class GeminiClient:
     
     def __init__(self, api_key: str):
         self.client = Client(api_key=api_key)
-        self.model = 'gemini-3-flash-preview'
+        self.model = 'gemini-2.5-flash'
     
     @retry(
         stop=stop_after_attempt(3),

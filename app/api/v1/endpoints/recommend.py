@@ -72,7 +72,7 @@ async def create_recommendation(
             current_conditions=request.current_conditions,
             weather_data=json.dumps(weather_data),
             recommendation=json.dumps(response.model_dump()),
-            llm_model="gemini-3-flash-preview"
+            llm_model="gemini-2.5-flash"
         )
         db.add(recommendation_db)
         await db.commit()
@@ -164,7 +164,7 @@ async def get_recommendation(
     }
 
 
-@router.get("/{recommendation_id}/pdf")
+@router.get("/recommendations/{recommendation_id}/pdf")
 async def download_recommendation_pdf(
     recommendation_id: int,
     db: AsyncSession = Depends(get_session)

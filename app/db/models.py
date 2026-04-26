@@ -15,7 +15,7 @@ class Recommendation(SQLModel, table=True):
     weather_data: str  # JSON string
     recommendation: str  # JSON string
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
-    llm_model: str = "gemini-3-flash-preview"
+    llm_model: str = "gemini-2.5-flash"
 
 
 class WeatherCache(SQLModel, table=True):
